@@ -5,12 +5,16 @@ const nextConfig = {
   basePath: '/outbrew',
 
   // API proxy for backend connection
+  // With basePath: '/outbrew', rewrites operate on paths AFTER basePath is stripped.
+  // Browser request: /outbrew/api/v1/auth/login
+  // Rewrite source matches: /api/v1/auth/login  (path = "v1/auth/login")
+  // Destination: http://backend:8000/api/v1/auth/login
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8000';
     return [
       {
         source: '/api/:path*',
-        destination: `${backendUrl}/:path*`,
+        destination: `${backendHost}/api/:path*`,
       },
     ]
   },
@@ -20,7 +24,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'metaminds.store',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.metaminds.store',
       },
     ],
   },
