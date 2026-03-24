@@ -130,11 +130,6 @@ export function ParsedResumeViewer({ resumeData, editable = false, onSave }: Par
   const [addingItemField, setAddingItemField] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
 
-  const addItem = (field: string) => {
-    setAddingItemField(field);
-    setNewItemText("");
-  };
-
   const data = isEditMode ? editedData : resumeData;
 
   // Calculate total skills
