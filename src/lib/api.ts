@@ -396,7 +396,7 @@ apiClient.interceptors.response.use(
           // Ignore if store not available
         }
         setTimeout(() => {
-          window.location.href = "/login";
+          window.location.href = "/outbrew/login";
         }, 100);
       }
     }
@@ -435,6 +435,15 @@ export const authAPI = {
 
   changePassword: (data: { current_password: string; new_password: string }) =>
     apiClient.post("/auth/change-password", data),
+
+  forgotPassword: (data: { email: string }) =>
+    apiClient.post("/auth/forgot-password", data),
+
+  resetPassword: (data: { token: string; new_password: string }) =>
+    apiClient.post("/auth/reset-password", data),
+
+  refreshToken: (data: { refresh_token: string }) =>
+    apiClient.post("/auth/refresh", data),
 };
 
 // ============================================

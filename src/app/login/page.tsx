@@ -91,6 +91,10 @@ export default function LoginPage() {
 
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -113,17 +117,21 @@ export default function LoginPage() {
     }
   }, [_hasHydrated, token, router]);
 
-  // Password strength calculator
+  // Password strength calculator — matches backend: 8+ chars, 1 letter, 1 number, 1 special
   useEffect(() => {
     const pwd = registerForm.password;
     let strength = 0;
-    if (pwd.length >= 6) strength += 1;
     if (pwd.length >= 8) strength += 1;
-    if (/[A-Z]/.test(pwd)) strength += 1;
+    if (/[A-Za-z]/.test(pwd)) strength += 1;
     if (/[0-9]/.test(pwd)) strength += 1;
     if (/[^A-Za-z0-9]/.test(pwd)) strength += 1;
+    if (pwd.length >= 12) strength += 1;
     setPasswordStrength(strength);
   }, [registerForm.password]);
+
+  const passwordMeetsRequirements = (pwd: string) => {
+    return pwd.length >= 8 && /[A-Za-z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,8 +182,8 @@ export default function LoginPage() {
         toast.error("Passwords do not match");
         return;
       }
-      if (registerForm.password.length < 6) {
-        toast.error("Password must be at least 6 characters");
+      if (!passwordMeetsRequirements(registerForm.password)) {
+        toast.error("Password must be at least 8 characters with 1 letter, 1 number, and 1 special character");
         return;
       }
       setRegisterStep(2);
@@ -263,6 +271,23 @@ export default function LoginPage() {
       smtp_port: 587,
     });
     setRegisterStep(1);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) {
+      toast.error("Please enter your email address");
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      await authAPI.forgotPassword({ email: forgotEmail });
+      setForgotSent(true);
+      toast.success("If an account with that email exists, a reset link has been sent.");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   const strengthColors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500"];
@@ -441,6 +466,16 @@ export default function LoginPage() {
                   )}
                 </Button>
               </motion.div>
+              {/* Forgot Password Link */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-xs text-orange-400/70 hover:text-orange-400 transition-colors"
+                >
+                  Forgot your password?
+                </button>
+              </div>
             </form>
 
             {/* Divider */}
@@ -607,9 +642,9 @@ export default function LoginPage() {
                         {showRegisterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {/* Password strength indicator */}
+                    {/* Password strength indicator + requirements */}
                     {registerForm.password && (
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex gap-1">
                           {[...Array(5)].map((_, i) => (
                             <div
@@ -623,6 +658,20 @@ export default function LoginPage() {
                         <p className={`text-xs ${passwordStrength >= 3 ? "text-green-400" : "text-orange-400"}`}>
                           {strengthLabels[passwordStrength - 1] || "Enter password"}
                         </p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                          <span className={`text-[10px] ${registerForm.password.length >= 8 ? "text-green-400" : "text-neutral-500"}`}>
+                            {registerForm.password.length >= 8 ? "✓" : "○"} 8+ chars
+                          </span>
+                          <span className={`text-[10px] ${/[A-Za-z]/.test(registerForm.password) ? "text-green-400" : "text-neutral-500"}`}>
+                            {/[A-Za-z]/.test(registerForm.password) ? "✓" : "○"} Letter
+                          </span>
+                          <span className={`text-[10px] ${/[0-9]/.test(registerForm.password) ? "text-green-400" : "text-neutral-500"}`}>
+                            {/[0-9]/.test(registerForm.password) ? "✓" : "○"} Number
+                          </span>
+                          <span className={`text-[10px] ${/[^A-Za-z0-9]/.test(registerForm.password) ? "text-green-400" : "text-neutral-500"}`}>
+                            {/[^A-Za-z0-9]/.test(registerForm.password) ? "✓" : "○"} Special
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -821,6 +870,86 @@ export default function LoginPage() {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={(open) => {
+        setShowForgotPassword(open);
+        if (!open) { setForgotEmail(""); setForgotSent(false); }
+      }}>
+        <DialogContent className="sm:max-w-md bg-[#0a0a0a] border-orange-500/15">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-orange-400" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400">
+              {forgotSent
+                ? "Check your email for a password reset link."
+                : "Enter your email address and we'll send you a reset link."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!forgotSent ? (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-300 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-orange-400" />
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleForgotPassword()}
+                  className="h-11 bg-white/[0.04] border-orange-500/15 text-white rounded-lg"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex-1 text-neutral-400 hover:text-white"
+                  onClick={() => setShowForgotPassword(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                  onClick={handleForgotPassword}
+                  disabled={forgotLoading}
+                >
+                  {forgotLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+                <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                <p className="text-sm text-green-400">
+                  Reset link sent to <span className="font-semibold">{forgotEmail}</span>
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Check your inbox and spam folder.
+                </p>
+              </div>
+              <Button
+                type="button"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500"
+                onClick={() => { setShowForgotPassword(false); setForgotSent(false); setForgotEmail(""); }}
+              >
+                Back to Login
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
