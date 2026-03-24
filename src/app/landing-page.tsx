@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Hero from "@/components/ui/animated-shader-hero";
 import {
   IconMail,
@@ -317,6 +318,7 @@ function Navbar() {
    ═══════════════════════════════════════════ */
 
 export default function LandingPage() {
+  const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const proPrice = billingCycle === "annual" ? 39 : 49;
   const savings = billingCycle === "annual" ? "Save 20%" : null;
@@ -333,7 +335,7 @@ export default function LandingPage() {
         buttons={{
           primary: {
             text: "Start Free",
-            onClick: () => { window.location.href = "/login?plan=free"; },
+            onClick: () => { router.push("/login?plan=free"); },
           },
           secondary: {
             text: "View Pricing",
