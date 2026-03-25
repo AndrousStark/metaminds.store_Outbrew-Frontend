@@ -444,6 +444,9 @@ export const authAPI = {
 
   refreshToken: (data: { refresh_token: string }) =>
     apiClient.post("/auth/refresh", data),
+
+  getSseTicket: () =>
+    apiClient.post<{ ticket: string }>("/auth/sse-ticket"),
 };
 
 // ============================================
@@ -3140,26 +3143,12 @@ export const groupCampaignsAPI = {
     }>(`/group-campaigns/${campaignId}/status`),
 
   streamEvents: async (campaignId: number, onEvent: (event: any) => void, onError?: (error: Error) => void): Promise<(() => void) | null> => {
-    // Get short-lived SSE ticket for authenticated streaming
-    const token = sessionStorage.getItem("token");
-    if (!token) {
-      onError?.(new Error("Not authenticated"));
-      return null;
-    }
-
     try {
-      const ticketRes = await fetch(`${API_BASE_URL}/auth/sse-ticket`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!ticketRes.ok) {
-        onError?.(new Error("Failed to get SSE ticket"));
-        return null;
-      }
-      const { ticket } = await ticketRes.json();
+      // Get short-lived SSE ticket via authenticated apiClient
+      const { data: ticketData } = await apiClient.post<{ ticket: string }>("/auth/sse-ticket");
 
       const eventSource = new EventSource(
-        `${API_BASE_URL}/group-campaigns/${campaignId}/events?ticket=${ticket}`
+        `${API_BASE_URL}/group-campaigns/${campaignId}/events?ticket=${ticketData.ticket}`
       );
 
       eventSource.onmessage = (event) => {

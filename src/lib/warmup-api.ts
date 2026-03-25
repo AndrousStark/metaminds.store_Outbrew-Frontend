@@ -852,17 +852,15 @@ class WarmupAPIClient {
   ): Promise<EventSource | null> {
     if (typeof window === "undefined") return null;
 
-    // Get short-lived SSE ticket instead of putting JWT in URL
-    const token = sessionStorage.getItem("token");
-    const ticketRes = await fetch(`${API_BASE_URL}/auth/sse-ticket`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!ticketRes.ok) {
+    // Get short-lived SSE ticket via authenticated apiClient
+    let ticket: string;
+    try {
+      const { data } = await apiClient.post<{ ticket: string }>("/auth/sse-ticket");
+      ticket = data.ticket;
+    } catch {
       onError?.(new Error("Failed to get SSE ticket"));
       return null;
     }
-    const { ticket } = await ticketRes.json();
 
     const eventSource = new EventSource(
       `${API_BASE_URL}${this.basePath}/realtime/events?ticket=${ticket}`
@@ -1107,17 +1105,15 @@ class WarmupAPIClient {
   ): Promise<EventSource | null> {
     if (typeof window === "undefined") return null;
 
-    // Get short-lived SSE ticket instead of putting JWT in URL
-    const token = sessionStorage.getItem("token");
-    const ticketRes = await fetch(`${API_BASE_URL}/auth/sse-ticket`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!ticketRes.ok) {
+    // Get short-lived SSE ticket via authenticated apiClient
+    let ticket: string;
+    try {
+      const { data } = await apiClient.post<{ ticket: string }>("/auth/sse-ticket");
+      ticket = data.ticket;
+    } catch {
       onError?.(new Error("Failed to get SSE ticket"));
       return null;
     }
-    const { ticket } = await ticketRes.json();
 
     const eventSource = new EventSource(
       `${API_BASE_URL}${this.advancedBasePath}/realtime/adaptive-events?ticket=${ticket}`

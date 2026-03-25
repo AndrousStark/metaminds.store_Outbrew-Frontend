@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCampaignDraft } from '@/hooks/useCampaignDraft'
 import { ArrowLeft, Sparkles, Zap, Rocket, Shield, Users, Building2, GitBranch, Search, Clock, ChevronDown, ChevronUp, Mail, AlertTriangle, Copy, Network, ExternalLink, Wrench, Calendar, Globe, Briefcase } from 'lucide-react'
-import { recipientsAPI } from '@/lib/api'
+import { recipientsAPI, API_BASE_URL } from '@/lib/api'
 import apiClient from '@/lib/api'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -392,7 +392,7 @@ export default function Step2Page() {
     router.push('/campaigns/create/step3-template')
   }
 
-  const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '')
+  const apiBaseUrl = API_BASE_URL.replace(/\/$/, '')
 
   const progressSourceRef = useRef<EventSource | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)

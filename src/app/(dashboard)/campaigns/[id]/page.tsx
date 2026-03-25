@@ -11,7 +11,7 @@ import {
   Mail, MailOpen, Reply, XCircle, Clock,
   TrendingUp, Users, CheckCircle, AlertCircle
 } from 'lucide-react'
-import { groupCampaignsAPI } from '@/lib/api'
+import { groupCampaignsAPI, authAPI, API_BASE_URL } from '@/lib/api'
 import { toast } from 'sonner'
 
 interface CampaignStatus {
@@ -82,30 +82,13 @@ export default function CampaignMonitorPage() {
   const connectEventStream = async () => {
     if (!campaignId) return
 
-    const token = sessionStorage.getItem('token')
-    if (!token) {
-      console.error('Not authenticated, falling back to polling')
-      startPolling()
-      return
-    }
-
-    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '')
-
     try {
       // Fetch a short-lived SSE ticket using the auth token
-      const ticketRes = await fetch(`${apiBaseUrl}/auth/sse-ticket`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!ticketRes.ok) {
-        console.error('Failed to get SSE ticket, falling back to polling')
-        startPolling()
-        return
-      }
-      const { ticket } = await ticketRes.json()
+      const { data: ticketData } = await authAPI.getSseTicket()
+      const apiBaseUrl = API_BASE_URL.replace(/\/$/, '')
 
       const eventSource = new EventSource(
-        `${apiBaseUrl}/campaigns/${campaignId}/events?ticket=${ticket}`
+        `${apiBaseUrl}/campaigns/${campaignId}/events?ticket=${ticketData.ticket}`
       )
 
       eventSource.onmessage = (event) => {

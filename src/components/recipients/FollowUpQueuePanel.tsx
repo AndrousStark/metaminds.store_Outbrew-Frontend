@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { recipientsAPI } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -129,25 +130,10 @@ Would you have a few minutes for a brief conversation?
 Best regards`
   );
 
-  // Use Next.js proxy (/api/) to avoid cross-origin issues with follow-up endpoints
-  const proxyFetch = useCallback(async (path: string, options?: { method?: string; body?: unknown }) => {
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
-    const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    if (options?.body) headers["Content-Type"] = "application/json";
-    const res = await fetch(`/api${path}`, {
-      method: options?.method || "GET",
-      headers,
-      body: options?.body ? JSON.stringify(options.body) : undefined,
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  }, []);
-
   const fetchQueue = useCallback(async (days: number, showError = true) => {
     setLoading(true);
     try {
-      const data = await proxyFetch(`/recipients/follow-up/queue?days_since_contact=${days}`);
+      const { data } = await recipientsAPI.getFollowUpQueue(days);
       setQueue(data.queue || []);
     } catch (error) {
       console.error("Failed to fetch follow-up queue:", error);
@@ -155,38 +141,29 @@ Best regards`
     } finally {
       setLoading(false);
     }
-  }, [proxyFetch]);
+  }, []);
 
   // Load settings first, then queue
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
     async function init() {
       let days = daysThreshold;
       try {
-        const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
-        const headers: Record<string, string> = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        const settingsRes = await fetch("/api/recipients/follow-up/settings", {
-          headers,
-          signal: controller.signal,
-        });
-        if (settingsRes.ok) {
-          const data = await settingsRes.json();
+        const { data } = await recipientsAPI.getFollowUpSettings();
+        if (!cancelled) {
           setSettings(data);
           setDaysThreshold(data.days_before_follow_up);
           days = data.days_before_follow_up;
         }
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") return;
+      } catch (err) {
         console.error("Failed to load follow-up settings:", err);
       }
-      // Always try to load queue (suppress toast on init)
-      if (!controller.signal.aborted) {
+      if (!cancelled) {
         await fetchQueue(days, false);
       }
     }
     init();
-    return () => { controller.abort(); };
+    return () => { cancelled = true; };
   }, []);
 
   // Re-fetch queue when user changes threshold manually
@@ -197,7 +174,7 @@ Best regards`
 
   const handleSaveSettings = async () => {
     try {
-      await proxyFetch("/recipients/follow-up/settings", { method: "PUT", body: settings });
+      await recipientsAPI.updateFollowUpSettings(settings);
       toast.success("Follow-up settings saved!");
       setSettingsOpen(false);
     } catch (error) {
@@ -213,13 +190,9 @@ Best regards`
 
     setSending(true);
     try {
-      const result = await proxyFetch("/recipients/follow-up/bulk-send", {
-        method: "POST",
-        body: {
-          recipient_ids: selectedIds,
-          subject_template: subjectTemplate,
-          body_template: bodyTemplate,
-        },
+      const { data: result } = await recipientsAPI.bulkSendFollowUps(selectedIds, {
+        subject_template: subjectTemplate,
+        body_template: bodyTemplate,
       });
 
       const { sent, failed, skipped } = result.results;
@@ -251,13 +224,10 @@ Best regards`
         .replace("{position}", item.application?.position_title || "the position")
         .replace("{days_waiting}", String(item.days_waiting));
 
-      await proxyFetch(`/recipients/${item.recipient_id}/follow-up`, {
-        method: "POST",
-        body: {
-          subject,
-          body,
-          follow_up_number: item.follow_up_count + 1,
-        },
+      await recipientsAPI.sendFollowUp(item.recipient_id, {
+        subject,
+        body,
+        follow_up_number: item.follow_up_count + 1,
       });
 
       toast.success(`Follow-up sent to ${item.name || item.email}`);

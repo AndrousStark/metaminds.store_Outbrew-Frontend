@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { resumesAPI } from "@/lib/api";
 
 interface ParsedResumeData {
   name: string | null;
@@ -101,29 +102,9 @@ export function ResumeUploadPanel({
       setParsing(true);
       setProgress(50);
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
-      // Get auth token
-      const token = sessionStorage.getItem("token");
-      const headers: HeadersInit = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/resumes/parse`, {
-        method: "POST",
-        body: formData,
-        headers,
-      });
+      const { data: result } = await resumesAPI.parse(formData);
 
       setProgress(90);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to parse resume");
-      }
-
-      const result = await response.json();
       setProgress(100);
 
       setSuccess(true);
