@@ -147,7 +147,7 @@ export default function EmailControlsPage() {
                 </div>
               </div>
               <Button
-                onClick={() => window.location.href = '/inbox'}
+                onClick={() => window.location.href = '/outbrew/inbox'}
                 className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/15"
               >
                 <Inbox className="w-4 h-4 mr-2" />

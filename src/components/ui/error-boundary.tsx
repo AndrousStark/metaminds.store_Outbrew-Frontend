@@ -146,7 +146,7 @@ Component Stack: ${errorInfo?.componentStack}
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
-          <Button onClick={() => window.location.href = "/"} variant="outline">
+          <Button onClick={() => window.location.href = "/outbrew/"} variant="outline">
             <Home className="w-4 h-4 mr-2" />
             Go Home
           </Button>

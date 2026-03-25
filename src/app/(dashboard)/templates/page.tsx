@@ -1270,7 +1270,7 @@ export default function TemplatesPage() {
                             <Copy className="w-4 h-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => window.location.href = '/follow-up'}>
+                          <DropdownMenuItem onClick={() => window.location.href = '/outbrew/campaigns'}>
                             <Workflow className="w-4 h-4 mr-2" />
                             Use in Follow-up
                           </DropdownMenuItem>

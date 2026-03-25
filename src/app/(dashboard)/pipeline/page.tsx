@@ -1446,7 +1446,7 @@ export default function ApplicationsPage() {
                 {availableResumes.length === 0 && (
                   <p className="text-xs text-neutral-500">
                     No resumes uploaded yet.{" "}
-                    <a href="/documents" className="text-orange-400 hover:underline">Upload one</a>
+                    <a href="/outbrew/documents" className="text-orange-400 hover:underline">Upload one</a>
                   </p>
                 )}
               </div>

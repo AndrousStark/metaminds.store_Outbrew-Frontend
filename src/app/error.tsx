@@ -55,7 +55,7 @@ export default function Error({
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.location.href = "/login"}
+            onClick={() => window.location.href = "/outbrew/login"}
             className="border-orange-500/15 text-neutral-300"
           >
             <Home className="w-4 h-4 mr-2" />

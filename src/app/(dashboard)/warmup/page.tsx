@@ -632,7 +632,7 @@ export default function WarmupPage() {
             </div>
             <Button
               className="gap-2 bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => window.location.href = "/campaigns/create/step1-source"}
+              onClick={() => window.location.href = "/outbrew/campaigns/create/step1-source"}
             >
               <Rocket className="w-4 h-4" />
               Create Campaign
